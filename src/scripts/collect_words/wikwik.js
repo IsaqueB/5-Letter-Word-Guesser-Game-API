@@ -1,8 +1,9 @@
 const puppeteer = require("puppeteer");
 const fs = require("fs");
 const fetch = require("node-fetch");
+const path = require("path")
 
-const baseUrl = "https://pt.wikwik.org/"
+const base_url = "https://pt.wikwik.org/"
 const paths = [
     "palavras5letras.htm",
     "palavras5letraspagina2.htm",
@@ -19,22 +20,22 @@ const paths = [
     const browser = await puppeteer.launch();
     try{
         const [w0, w1, w2, w3, w4, w5, w6, w7, w8] = await Promise.all([
-            await getWords(browser, baseUrl+paths[0]),
-            await getWords(browser, baseUrl+paths[1]),
-            await getWords(browser, baseUrl+paths[2]),
-            await getWords(browser, baseUrl+paths[3]),
-            await getWords(browser, baseUrl+paths[4]),
-            await getWords(browser, baseUrl+paths[5]),
-            await getWords(browser, baseUrl+paths[6]),
-            await getWords(browser, baseUrl+paths[7]),
-            await getWords(browser, baseUrl+paths[8])
+            await getWords(browser, base_url+paths[0]),
+            await getWords(browser, base_url+paths[1]),
+            await getWords(browser, base_url+paths[2]),
+            await getWords(browser, base_url+paths[3]),
+            await getWords(browser, base_url+paths[4]),
+            await getWords(browser, base_url+paths[5]),
+            await getWords(browser, base_url+paths[6]),
+            await getWords(browser, base_url+paths[7]),
+            await getWords(browser, base_url+paths[8])
         ])
-        const wordsInArray = w0.concat(w1, w2, w3, w4, w5, w6, w7, w8)
+        const words_in_array = w0.concat(w1, w2, w3, w4, w5, w6, w7, w8)
         //filter words from website
-        let words = await filterWords(wordsInArray)
+        let words = await filterWords(words_in_array)
         //validate words
         words = await validateWords(words)
-        await fs.writeFileSync("../database/words.txt", words.join("\n"))
+        await fs.writeFileSync(path.resolve(__dirname, "..", "..", "database", "wikwik.txt"), words.join("\n"))
     }
     catch (e) {
         console.log(e)
@@ -47,11 +48,11 @@ function getWords(browser, url){
         try{
             const page = await browser.newPage();
             await page.goto(url)
-            proof = await page.evaluate(() => {
+            words = await page.evaluate(() => {
                 children = Array.from(document.querySelector(".mm").children, e => e.innerText)
                 return children
             })
-            resolve(proof)
+            resolve(words)
         }
         catch (e) {
             reject(e)
@@ -59,12 +60,12 @@ function getWords(browser, url){
     })
 }
 
-function filterWords(wordsInArray) {
+function filterWords(words_in_array) {
     return new Promise(resolve => {
         const words = []
-        wordsInArray.forEach(line => {
+        words_in_array.forEach(line => {
             let iwil = line.split(" ") //Split lines in which have more than one word like eg.: presa Presa
-            let wordsToAdd = []
+            let words_to_add = []
             iwil.forEach(w => {
                 w = w.toLowerCase()
                 //remove special characters
@@ -72,11 +73,11 @@ function filterWords(wordsInArray) {
                     return /[A-zÀ-ú]/.test(l)
                 }).join("")
                 //check if already exists
-                if (!wordsToAdd.includes(w)) {
-                    wordsToAdd.push(w)
+                if (!words_to_add.includes(w)) {
+                    words_to_add.push(w)
                 }
             })
-            wordsToAdd.forEach(w => {
+            words_to_add.forEach(w => {
                 words.push(w)
             })
         })
